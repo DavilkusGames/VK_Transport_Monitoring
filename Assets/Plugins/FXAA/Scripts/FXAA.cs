@@ -15,12 +15,8 @@ public class FXAA : MonoBehaviour
 
 	void CreateMaterialIfNeeded()
 	{
-		if ( shader != null && shader.isSupported )
-		{
-			mat = ( mat != null ) ? mat : new Material( shader );
-            Debug.Log("FXAA is supported and active");
-        }
-		else
+		if ( shader != null && shader.isSupported) mat = (mat != null) ? mat : new Material(shader);
+        else
 		{
 			Debug.Log("FXAA is not supported on this device");
 			enabled = false;
