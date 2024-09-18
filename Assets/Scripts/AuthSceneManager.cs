@@ -23,8 +23,8 @@ public class AuthSceneManager : MonoBehaviour
         authPanel.SetActive(true);
     }
 
-    public async void AuthViaVK()
+    public void AuthViaVK()
     {
-        await VK_Api.Instance.Auth();
+        VK_Api.Instance.AuthRequest();
     }
 }

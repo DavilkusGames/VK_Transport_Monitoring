@@ -1,17 +1,25 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
 using System.Net;
 using System.Net.Http;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
+using UnityEditor.VersionControl;
 using UnityEngine;
 using UnityEngine.Networking;
 
 public class VK_Api : MonoBehaviour
 {
     public static VK_Api Instance { get; private set; }
+
+    private HttpListener server;
+    private string code = null;
+    private string deviceId = null;
+    private string accessToken = null;
 
     private void Awake()
     {
@@ -21,7 +29,12 @@ public class VK_Api : MonoBehaviour
 
     private void OnDestroy() => Instance = null;
 
-    public async Task Auth()
+    public void AuthRequest()
+    {
+        StartCoroutine(nameof(Auth));
+    }
+
+    private IEnumerator Auth()
     {
         string clientId = "52324294";
         string clientSecret = "Tnz6O3S0CH3MUmLqGhwU";
@@ -32,46 +45,58 @@ public class VK_Api : MonoBehaviour
         string state = "state";
         string scopes = "vkid.personal_info";
 
-        var server = new HttpListener();
+        server = new HttpListener();
         server.Prefixes.Add("http://localhost:5444/");
         server.Start();
+
+        Thread listenerThread = new Thread(StartListenerThread);
+        listenerThread.Start();
 
         string authUrl = $"https://id.vk.com/authorize?client_id={clientId}&redirect_uri={redirectUri}&code_challenge={codeChallenge}&code_challenge_method={codeChallengeMethod}&state={state}&display=page&scope={scopes}&response_type=code";
         Debug.Log("Открытие браузера для авторизации...");
 
         Application.OpenURL(authUrl);
 
-        var context = await server.GetContextAsync();
-        var query = context.Request.Url.Query;
-        await Console.Out.WriteLineAsync(query);
-        string message = "";
-        string code = "";
-        string deviceId = "";
+        while (code == null) yield return null;
+        Thread getAccessTokenThread = new Thread(() => GetAccessTokenThread(clientId, clientSecret, code, deviceId, redirectUri));
+        getAccessTokenThread.Start();
+        while (accessToken == null) yield return null;
+        Debug.Log("Access Token: " + accessToken);
+    }
 
+    private async void ListenerCallback(IAsyncResult result)
+    {
+        var context = server.EndGetContext(result);
 
-        if (context.Request.IsWebSocketRequest)
+        context.Response.AddHeader("Access-Control-Allow-Origin", "*");
+        context.Response.AddHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS");
+        context.Response.AddHeader("Access-Control-Allow-Headers", "Content-Type");
+
+        if (context.Request.HttpMethod == "OPTIONS")
         {
-            var wsContext = await context.AcceptWebSocketAsync(null);
-            var buffer = new byte[1024];
-            var result = await wsContext.WebSocket.ReceiveAsync(new ArraySegment<byte>(buffer), System.Threading.CancellationToken.None);
-
-            message = Encoding.UTF8.GetString(buffer, 0, result.Count);
-            string[] values = message.Split('&');
-            code = values[0];
-            deviceId = values[1];
+            context.Response.StatusCode = 200;
+            context.Response.Close();
+            return;
         }
 
-        if (message != null)
+        using (var reader = new StreamReader(context.Request.InputStream, context.Request.ContentEncoding))
         {
-            var accessToken = await GetAccessToken(clientId, clientSecret, code, deviceId, redirectUri);
-            Console.WriteLine("Access Token: " + accessToken);
-        }
-        else
-        {
-            Console.WriteLine("Ошибка получения кода авторизации");
+            string message = await reader.ReadToEndAsync();
+            string[] data = message.Split('&');
+            code = data[0];
+            deviceId = data[1];
         }
 
-        server.Close();
+        context.Response.Close();
+    }
+
+    private void StartListenerThread()
+    {
+        while (true)
+        {
+            var result = server.BeginGetContext(ListenerCallback, server);
+            result.AsyncWaitHandle.WaitOne();
+        }
     }
 
     private string GenerateCodeChallenge(string codeVerifier)
@@ -85,6 +110,11 @@ public class VK_Api : MonoBehaviour
                 .Replace('+', '-')
                 .Replace('/', '_');
         }
+    }
+
+    private void GetAccessTokenThread(string clientId, string clientSecret, string code, string deviceId, string redirectUri)
+    {
+        accessToken = GetAccessToken(clientId, clientSecret, code, deviceId, redirectUri).Result;
     }
 
     private async Task<string> GetAccessToken(string clientId, string clientSecret, string code, string deviceId, string redirectUri)
