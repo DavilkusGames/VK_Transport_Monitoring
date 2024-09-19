@@ -26,6 +26,9 @@ public class VK_Api : MonoBehaviour
     private Thread listenerThread = null;
     private Thread getAccessTokenThread = null;
 
+    public static string Username = string.Empty;
+    public static string UserID = string.Empty;
+    public static string PfpLink = string.Empty;
 
     private void Awake()
     {
@@ -89,10 +92,15 @@ public class VK_Api : MonoBehaviour
         Application.OpenURL(authUrl);
 
         while (code == null) yield return null;
-        Debug.Log("Code received. Getting access token...");
-        getAccessTokenThread = new Thread(() => GetAccessTokenThread(clientId, clientSecret, code, deviceId, redirectUri));
-        while (accessToken == null) yield return null;
+        //Debug.Log("Code received. Getting access token...");
+        //getAccessTokenThread = new Thread(() => GetAccessTokenThread(clientId, clientSecret, code, deviceId, redirectUri));
+        //while (accessToken == null) yield return null;
         Debug.Log("Access Token: " + accessToken);
+
+        Username = "Михаил Максимов";
+        UserID = "423712697";
+        PfpLink = Path.Combine(Directory.GetCurrentDirectory(), "DATA", "davPfp.png");
+
         authCallback(true);
     }
 
@@ -131,6 +139,7 @@ public class VK_Api : MonoBehaviour
         }
     }
 
+   
     private string GenerateCodeChallenge(string codeVerifier)
     {
         using (var sha256 = SHA256.Create())
@@ -143,7 +152,8 @@ public class VK_Api : MonoBehaviour
                 .Replace('/', '_');
         }
     }
-
+    
+    /*
     private void GetAccessTokenThread(string clientId, string clientSecret, string code, string deviceId, string redirectUri)
     {
         accessToken = GetAccessToken(clientId, clientSecret, code, deviceId, redirectUri).Result;
@@ -171,7 +181,8 @@ public class VK_Api : MonoBehaviour
 
             return responseString;
         }
-    }
+    }*/
+
 
     private static string GenerateRandomString(int length)
     {

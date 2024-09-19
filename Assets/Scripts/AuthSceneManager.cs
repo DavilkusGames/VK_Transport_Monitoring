@@ -16,14 +16,14 @@ public class AuthSceneManager : MonoBehaviour
     public float loadingDelay = 2f;
 
     public Sprite[] langIcons;
-
-    private string username = "{USERNAME}";
+    private static bool IsInit = false;
 
     private void Start()
     {
         Application.targetFrameRate = 60;
         versionTxt.text = "v." + Application.version;
-        Invoke(nameof(LoadingDelay), initializingDelay);
+        if (!IsInit) Invoke(nameof(LoadingDelay), initializingDelay);
+        else Invoke(nameof(LoadingDelay), 0.2f);
 
         loadingPanel.SetActive(true);
         authPanel.SetActive(false);
@@ -35,28 +35,27 @@ public class AuthSceneManager : MonoBehaviour
     {
         loadingPanel.SetActive(false);
         authPanel.SetActive(true);
+        IsInit = true;
     }
 
     public void AuthViaVK()
     {
-        authPanel.SetActive(true);
+        authPanel.SetActive(false);
         authLoadingPanel.SetActive(true);
         VK_Api.Instance.AuthRequest(AuthDone);
     }
 
     public void GuestMode()
     {
-        username = "USER";
+        VK_Api.Username = "USER";
+        VK_Api.UserID = string.Empty;
         AuthSuccess();
     }
 
     public void AuthDone(bool result)
     {
         if (!result) CancelAuth();
-        else
-        {
-            AuthSuccess();
-        }
+        else AuthSuccess();
     }
 
     private void AuthSuccess()
@@ -64,7 +63,7 @@ public class AuthSceneManager : MonoBehaviour
         authPanel.SetActive(false);
         authLoadingPanel.SetActive(false);
         welcomePanel.SetActive(true);
-        if (username != "USER") welcomeTxt.ReplaceText("{USERNAME}", username, username);
+        if (VK_Api.Username != "USER") welcomeTxt.ReplaceText("{USERNAME}", VK_Api.Username, VK_Api.Username);
         else welcomeTxt.ReplaceText("{USERNAME}", "Пользователь", "User");
         Invoke(nameof(LoadMainScene), loadingDelay);
     }

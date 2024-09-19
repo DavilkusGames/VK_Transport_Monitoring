@@ -85,10 +85,10 @@ Material:
     - _UseUIAlphaClip: 0
     - _ZWrite: 1
     m_Colors:
-    - _BottomLeftColor: {r: 0.6678826, g: 0.81882226, b: 0.98117125, a: 1}
-    - _BottomRightColor: {r: 0.756403, g: 0.6878099, b: 0.91607255, a: 1}
+    - _BottomLeftColor: {r: 0.7786571, g: 0.62677103, b: 0.85749876, a: 1}
+    - _BottomRightColor: {r: 0.46172515, g: 0.53728426, b: 0.98962456, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _TopLeftColor: {r: 0.3729924, g: 0.37724644, b: 0.73133504, a: 1}
-    - _TopRightColor: {r: 0.720369, g: 0.46121955, b: 0.591029, a: 1}
+    - _TopLeftColor: {r: 0.4744805, g: 0.61491835, b: 0.986846, a: 1}
+    - _TopRightColor: {r: 0.7478824, g: 0.7386735, b: 0.8875993, a: 1}
   m_BuildTextureStacks: []
