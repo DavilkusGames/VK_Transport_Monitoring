@@ -1714,7 +1714,7 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_text: "\u041F\u043E\u0434\u043A\u043B\u044E\u0447\u0435\u043D\u0438\u0435 \u043A
-    \u0441\u0435\u0440\u0432\u0438\u0441\u0430\u043C \u0412\u041A...."
+    \u0441\u0435\u0440\u0432\u0438\u0441\u0430\u043C \u0412\u041A\u043E\u043D\u0442\u0430\u043A\u0442\u0435...."
   m_isRightToLeft: 0
   m_fontAsset: {fileID: 11400000, guid: d6c69e0628f5d754a9b6be1e84f93e04, type: 2}
   m_sharedMaterial: {fileID: -8537996919827688424, guid: d6c69e0628f5d754a9b6be1e84f93e04, type: 2}
@@ -3044,7 +3044,7 @@ MonoBehaviour:
   versionTxt: {fileID: 547638358}
   welcomeTxt: {fileID: 828420171}
   initializingDelay: 3
-  loadingDelay: 4.5
+  loadingDelay: 5
   langIcons:
   - {fileID: 21300000, guid: ea72ac733e9ae324eb2e3d9dd568c126, type: 3}
   - {fileID: 21300000, guid: dc585885f0a84344aaaffd14f99fcfb6, type: 3}

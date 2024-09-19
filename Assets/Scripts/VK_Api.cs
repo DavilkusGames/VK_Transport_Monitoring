@@ -84,13 +84,13 @@ public class VK_Api : MonoBehaviour
 
         yield return new WaitForSeconds(1f);
         string authUrl = $"https://id.vk.com/authorize?client_id={clientId}&redirect_uri={redirectUri}&code_challenge={codeChallenge}&code_challenge_method={codeChallengeMethod}&state={state}&display=page&scope={scopes}&response_type=code";
-        Debug.Log("Открытие браузера для авторизации...");
+        Debug.Log("Opening browser for authorization...");
 
         Application.OpenURL(authUrl);
 
         while (code == null) yield return null;
+        Debug.Log("Code received. Getting access token...");
         getAccessTokenThread = new Thread(() => GetAccessTokenThread(clientId, clientSecret, code, deviceId, redirectUri));
-        getAccessTokenThread.Start();
         while (accessToken == null) yield return null;
         Debug.Log("Access Token: " + accessToken);
         authCallback(true);
