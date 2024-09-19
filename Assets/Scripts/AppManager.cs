@@ -10,6 +10,4 @@ public class AppManager : MonoBehaviour
         Application.targetFrameRate = 60;
         versionTxt.text = "v." + Application.version;
     }
-
-
 }

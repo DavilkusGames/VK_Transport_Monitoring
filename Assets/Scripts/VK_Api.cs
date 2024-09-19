@@ -8,18 +8,24 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using UnityEditor.VersionControl;
 using UnityEngine;
-using UnityEngine.Networking;
 
 public class VK_Api : MonoBehaviour
 {
     public static VK_Api Instance { get; private set; }
+    private static string accessToken = null;
 
     private HttpListener server;
     private string code = null;
     private string deviceId = null;
-    private string accessToken = null;
+    private string codeVerifier = string.Empty;
+
+    public delegate void AuthCallback(bool result);
+    private AuthCallback authCallback = null;
+
+    private Thread listenerThread = null;
+    private Thread getAccessTokenThread = null;
+
 
     private void Awake()
     {
@@ -29,17 +35,41 @@ public class VK_Api : MonoBehaviour
 
     private void OnDestroy() => Instance = null;
 
-    public void AuthRequest()
+    public void AuthRequest(AuthCallback callback)
     {
+        authCallback = callback;
         StartCoroutine(nameof(Auth));
+    }
+
+    public void CancelAuth()
+    {
+        if (server == null) return;
+
+        if (listenerThread != null)
+        {
+            if (listenerThread.ThreadState == ThreadState.Running) listenerThread.Abort();
+            listenerThread = null;
+        }
+
+        if (getAccessTokenThread != null)
+        {
+            if (getAccessTokenThread.ThreadState == ThreadState.Running) getAccessTokenThread.Abort();
+            getAccessTokenThread = null;
+        }
+
+        if (server.IsListening) server.Stop();
+        server = null;
+
+        StopCoroutine(nameof(Auth));
     }
 
     private IEnumerator Auth()
     {
+        codeVerifier = GenerateRandomString(60);
+
         string clientId = "52324294";
         string clientSecret = "Tnz6O3S0CH3MUmLqGhwU";
         string redirectUri = "https://1pixelgames.ru/";
-        string codeVerifier = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
         string codeChallenge = GenerateCodeChallenge(codeVerifier);
         string codeChallengeMethod = "s256";
         string state = "state";
@@ -49,19 +79,21 @@ public class VK_Api : MonoBehaviour
         server.Prefixes.Add("http://localhost:5444/");
         server.Start();
 
-        Thread listenerThread = new Thread(StartListenerThread);
+        listenerThread = new Thread(StartListenerThread);
         listenerThread.Start();
 
+        yield return new WaitForSeconds(1f);
         string authUrl = $"https://id.vk.com/authorize?client_id={clientId}&redirect_uri={redirectUri}&code_challenge={codeChallenge}&code_challenge_method={codeChallengeMethod}&state={state}&display=page&scope={scopes}&response_type=code";
         Debug.Log("Открытие браузера для авторизации...");
 
         Application.OpenURL(authUrl);
 
         while (code == null) yield return null;
-        Thread getAccessTokenThread = new Thread(() => GetAccessTokenThread(clientId, clientSecret, code, deviceId, redirectUri));
+        getAccessTokenThread = new Thread(() => GetAccessTokenThread(clientId, clientSecret, code, deviceId, redirectUri));
         getAccessTokenThread.Start();
         while (accessToken == null) yield return null;
         Debug.Log("Access Token: " + accessToken);
+        authCallback(true);
     }
 
     private async void ListenerCallback(IAsyncResult result)
@@ -124,7 +156,7 @@ public class VK_Api : MonoBehaviour
             var values = new Dictionary<string, string>
             {
                 { "grant_type", "authorization_code" },
-                { "code_verifier", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" },
+                { "code_verifier", codeVerifier },
                 { "redirect_uri", redirectUri },
                 { "code", code },
                 { "client_id", clientId },
@@ -139,5 +171,19 @@ public class VK_Api : MonoBehaviour
 
             return responseString;
         }
+    }
+
+    private static string GenerateRandomString(int length)
+    {
+        const string chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        StringBuilder result = new StringBuilder(length);
+        System.Random random = new System.Random();
+
+        for (int i = 0; i < length; i++)
+        {
+            result.Append(chars[random.Next(chars.Length)]);
+        }
+
+        return result.ToString();
     }
 }
